@@ -1,0 +1,57 @@
+\c forum;
+
+DROP Table IF EXISTS users CASCADE;
+
+CREATE TABLE IF NOT EXISTS users (
+  nickname VARCHAR PRIMARY KEY,
+  fullname VARCHAR,
+  about TEXT,
+  email VARCHAR NOT NULL UNIQUE
+);
+
+DROP Table IF EXISTS forums CASCADE;
+
+CREATE TABLE IF NOT EXISTS forums (
+  id SERIAL NOT NULL PRIMARY KEY,
+  title VARCHAR NOT NULL,
+  username VARCHAR NOT NULL REFERENCES users (nickname),
+  slug VARCHAR NOT NULL UNIQUE,
+  posts INTEGER DEFAULT 0,
+  threads INTEGER DEFAULT 0
+);
+
+DROP Table IF EXISTS threads CASCADE;
+
+CREATE TABLE IF NOT EXISTS threads (
+  id SERIAL NOT NULL PRIMARY KEY,
+  author VARCHAR NOT NULL REFERENCES users (nickname),
+  created TIMESTAMP WITH TIME ZONE,
+  forum INTEGER NOT NULL REFERENCES forums (id),
+  message TEXT NOT NULL,
+  slug VARCHAR UNIQUE,
+  title VARCHAR NOT NULL,
+  votes INTEGER DEFAULT 0
+);
+
+DROP Table IF EXISTS posts CASCADE;
+
+CREATE TABLE IF NOT EXISTS posts (
+  id SERIAL NOT NULL PRIMARY KEY,
+  author VARCHAR NOT NULL REFERENCES users (nickname),
+  created TIMESTAMP WITH TIME ZONE DEFAULT current_timestamp,
+  forum VARCHAR,
+  isEdited BOOLEAN DEFAULT FALSE,
+  message TEXT NOT NULL,
+  parent INTEGER DEFAULT 0,
+  thread INTEGER NOT NULL REFERENCES threads (id)
+);
+
+DROP Table IF EXISTS votes CASCADE;
+
+CREATE TABLE IF NOT EXISTS votes (
+  id SERIAL NOT NULL PRIMARY KEY,
+  username VARCHAR NOT NULL REFERENCES users (nickname),
+  voice INTEGER,
+  thread INTEGER NOT NULL REFERENCES threads (id),
+  UNIQUE (username, thread)
+);
