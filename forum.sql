@@ -1,4 +1,4 @@
-\c forum;
+\c docker;
 
 DROP Table IF EXISTS users CASCADE;
 

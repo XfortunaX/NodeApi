@@ -9,7 +9,7 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-var connectionString = "postgres://sergey:qwerty@localhost:5432/forum";
+var connectionString = "postgres://docker:docker@localhost:5432/docker";
 var db = pgp(connectionString);
 
 function isEmpty(obj) {
