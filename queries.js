@@ -350,18 +350,6 @@ function createOneThread(req, res, next) {
         }
       }
       return db.tx( t => {
-        let query = 'insert into users_forums values (\'' + posts[0].author + '\',\'' + forumId + '\')';
-        for (let i = 1; i < posts.length; i += 1) {
-          query += ', (\'' + posts[i].author + '\',\'' + forumId + '\')';
-        }
-        query += 'ON CONFLICT ON CONSTRAINT unique_uf DO NOTHING';
-        let q1 = db.none(query);
-        let q2 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
-        return t.batch([q1, q2]);
-      })
-    })
-    .then ( data => {
-      return db.tx( t => {
         let queries = posts.map( l => {
           let query = ' INSERT INTO posts (author, message, parent, thread, forum, path) ' +
             'VALUES (\'' + l.author + '\',\'' + l.message + '\',' +
@@ -372,10 +360,21 @@ function createOneThread(req, res, next) {
           query += '(SELECT currval(\'posts_id_seq\'))]) returning id, created, author, message, parent, thread, forum';
           return t.one(query);
         });
+        let que = 'insert into users_forums values (\'' + posts[0].author + '\',\'' + forumId + '\')';
+        for (let i = 1; i < posts.length; i += 1) {
+          query += ', (\'' + posts[i].author + '\',\'' + forumId + '\')';
+        }
+        que += 'ON CONFLICT ON CONSTRAINT unique_uf DO NOTHING';
+        let q1 = db.none(que);
+        let q2 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
+        queries.push(q1);
+        queries.push(q2);
         return t.batch(queries);
       })
     })
     .then( data => {
+      data.pop();
+      data.pop();
       let d = JSON.stringify(data);
       d = JSON.parse(d);
       res.status(201).send(d);
