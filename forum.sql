@@ -22,6 +22,7 @@ DROP INDEX IF EXISTS idx_post_t_p;
 DROP INDEX IF EXISTS idx_post_p1_t_p_i;
 DROP INDEX IF EXISTS idx_thread_f_c;
 DROP INDEX IF EXISTS idx_nick_nicklow;
+DROP INDEX IF EXISTS idx_post_p;
 DROP INDEX IF EXISTS idx_post_p1;
 DROP INDEX IF EXISTS idx_uf_user;
 DROP INDEX IF EXISTS idx_uf_forum;
@@ -81,7 +82,7 @@ CREATE TABLE IF NOT EXISTS posts (
   message TEXT NOT NULL,
   parent INTEGER DEFAULT 0,
   thread INTEGER NOT NULL REFERENCES threads (id),
-  path INT ARRAY
+  path BIGINT ARRAY
 );
 
 CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
@@ -111,6 +112,9 @@ CREATE TABLE IF NOT EXISTS users_forums (
   user_nickname VARCHAR REFERENCES users (nickname) NOT NULL,
   forum_id INTEGER REFERENCES forums(id) NOT NULL
 );
+
+ALTER TABLE users_forums DROP CONSTRAINT IF EXISTS unique_uf;
+ALTER TABLE users_forums ADD CONSTRAINT unique_uf UNIQUE (user_nickname, forum_id);
 
 CREATE INDEX IF NOT EXISTS idx_uf_user ON users_forums (user_nickname);
 CREATE INDEX IF NOT EXISTS idx_uf_forum ON users_forums (forum_id);
