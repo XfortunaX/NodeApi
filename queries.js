@@ -318,61 +318,72 @@ function createOneThread(req, res, next) {
   db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join forums on threads.forum = forums.id ' +
     ' where ' + query + ' = $1', slug)
     .then( data => {
-    forumSlug = data.slug;
-  threadId = data.id;
-  forumId = data.forumId;
-  let quePost = 'select posts.id, posts.path from posts where posts.thread = ' + threadId +
-    ' and posts.id = ANY(ARRAY[' + posts[0].parent;
-  for(let j = 1; j < posts.length; j++) {
-    quePost += ',' + posts[j].parent;
-  }
-  quePost += '])';
-  return db.any(quePost);
-})
-.then( data => {
-    let check = 0;
-  for (let i = 0; i < posts.length; i += 1) {
-    check = 1;
-    if (posts[i].parent === 0) {
-      check = 0;
-    } else {
-      for (let j = 0; j < data.length && check === 1; j += 1) {
-        if (posts[i].parent === data[j].id) {
+      forumSlug = data.slug;
+      threadId = data.id;
+      forumId = data.forumId;
+      let quePost = 'select posts.id, posts.path from posts where posts.thread = ' + threadId +
+        ' and posts.id = ANY(ARRAY[' + posts[0].parent;
+      for(let j = 1; j < posts.length; j++) {
+        quePost += ',' + posts[j].parent;
+      }
+      quePost += '])';
+      return db.any(quePost);
+    })
+    .then( data => {
+        let check = 0;
+      for (let i = 0; i < posts.length; i += 1) {
+        check = 1;
+        if (posts[i].parent === 0) {
           check = 0;
-          posts[i].path = data[j].path;
+        } else {
+          for (let j = 0; j < data.length && check === 1; j += 1) {
+            if (posts[i].parent === data[j].id) {
+              check = 0;
+              posts[i].path = data[j].path;
+            }
+          }
+        }
+        if(check === 1) {
+          res.status(409).send();
         }
       }
-    }
-    if(check === 1) {
-      res.status(409).send();
-    }
-  }
-  return db.tx( t => {
-      let queries = posts.map( l => {
+      return db.tx( t => {
+        let queries = posts.map( l => {
           let query = 'insert into users_forums values (\'' + l.author + '\',\'' + forumId + '\');';
-  query += ' INSERT INTO posts (id, author, message, parent, thread, forum, path) ' +
-    'VALUES ((SELECT nextval(pg_get_serial_sequence(\'posts\', \'id\'))),\'' + l.author + '\',\'' + l.message + '\',' +
-    '\'' + l.parent +'\',\'' + threadId + '\',\'' + forumSlug + '\', ARRAY[';
-  for(let i = 0; i < l.path.length; i += 1) {
-    query += l.path[i] + ',';
-  }
-  query += '(SELECT currval(pg_get_serial_sequence(\'posts\', \'id\')))]) returning *';
-  return t.one(query);
-});
-  let q1 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
-  queries.push(q1);
-  return t.batch(queries);
-})
-})
-.then( data => {
-    data.pop();
-  let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(201).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+          query += ' INSERT INTO posts (id, author, message, parent, thread, forum, path) ' +
+            'VALUES ((SELECT nextval(pg_get_serial_sequence(\'posts\', \'id\'))),\'' + l.author + '\',\'' + l.message + '\',' +
+            '\'' + l.parent +'\',\'' + threadId + '\',\'' + forumSlug + '\', ARRAY[';
+          for(let i = 0; i < l.path.length; i += 1) {
+            query += l.path[i] + ',';
+          }
+          query += '(SELECT currval(pg_get_serial_sequence(\'posts\', \'id\')))]) returning id';
+          return t.one(query);
+        });
+        return t.batch(queries);
+      })
+    })
+    .then( data => {
+      // console.log(data);
+      return db.tx( t => {
+        let q1 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
+        let que = 'select author, message, parent, created, forum, id, thread from posts where id = ANY(ARRAY[' + data[0].id;
+        for (let i = 1; i < data.length; i+= 1) {
+          que += ', ' + data[i].id;
+        }
+        que += ']) order by id';
+        let q2 = db.any(que);
+        return t.batch([q1, q2]);
+      })
+    })
+    .then( data => {
+      // console.log(data);
+      let d = JSON.stringify(data[1]);
+      d = JSON.parse(d);
+      res.status(201).send(d);
+    })
+  .catch( err => {
+      res.status(404).send(err);
+  });
 }
 
 function createVote(req, res, next) {
