@@ -317,47 +317,35 @@ function createOneThread(req, res, next) {
 
   db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join forums on threads.forum = forums.id ' +
     ' where ' + query + ' = $1', slug)
+    .catch( err => {
+      res.status(404).send(err);
+    })
     .then( data => {
       forumSlug = data.slug;
       threadId = data.id;
       forumId = data.forumId;
-      let quePost = 'select posts.id, posts.path from posts where posts.thread = ' + threadId +
-        ' and posts.id = ANY(ARRAY[' + posts[0].parent;
-      for(let j = 1; j < posts.length; j++) {
-        quePost += ',' + posts[j].parent;
-      }
-      quePost += '])';
-      return db.any(quePost);
+      return db.tx( t => {
+        let queries = [];
+        for (let i = 0; i < posts.length; i += 1) {
+          if (posts[i].parent !== 0) {
+            let q1 = t.one('select id from posts where id = ' + posts[i].parent + ' and thread = ' + threadId);
+            queries.push(q1);
+          }
+        }
+        return t.batch(queries);
+      })
+    })
+    .catch( err => {
+      res.status(409).send(err);
     })
     .then( data => {
-      let check = 0;
-      for (let i = 0; i < posts.length; i += 1) {
-        check = 1;
-        posts[i].thread = threadId;
-        posts[i].forum = forumSlug;
-        if (posts[i].parent === 0) {
-          check = 0;
-        } else {
-          for (let j = 0; j < data.length && check === 1; j += 1) {
-            if (posts[i].parent === data[j].id) {
-              check = 0;
-              posts[i].path = data[j].path;
-            }
-          }
-        }
-        if(check === 1) {
-          res.status(409).send();
-        }
-      }
-      return db.tx( t => {
-        let queries = posts.map( l => {
+      return db.tx(t => {
+        let queries = posts.map(l => {
           let query = ' INSERT INTO posts (author, message, parent, thread, forum, path) ' +
             'VALUES (\'' + l.author + '\',\'' + l.message + '\',' +
-            '\'' + l.parent +'\',\'' + l.thread + '\',\'' + l.forum + '\', ARRAY[';
-          for(let i = 0; i < l.path.length; i += 1) {
-            query += l.path[i] + ',';
-          }
-          query += '(SELECT currval(\'posts_id_seq\'))]) returning id, created, author, message, parent, thread, forum';
+            + l.parent + ',\'' + threadId + '\',\'' + forumSlug + '\',' +
+            ' array_append((select path from posts where id = ' + l.parent + '),' +
+            '(SELECT currval(\'posts_id_seq\')))) returning *;';
           return t.one(query);
         });
         let que = 'insert into users_forums values (\'' + posts[0].author + '\',\'' + forumId + '\')';
