@@ -9,7 +9,7 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
-pgp.pg.defaults.poolSize = 20;
+pgp.pg.defaults.poolSize = 15;
 var connectionString = "postgres://docker:docker@localhost:5432/docker";
 var db = pgp(connectionString);
 
@@ -404,37 +404,39 @@ function createVote(req, res, next) {
     .then( data => {
       deltaVoice = -(data.voice - voice);
       db.tx(t => {
-        let q1 = t.none('update votes set (voice) = (' + voice + ') where id = $1', data.id);
-        let q2 = t.none('update threads set (votes) = (votes + ' + deltaVoice + ') where id = $1', threadId);
-        let q3 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
+        let query = 'update votes set (voice) = (' + voice + ') where id = ' + data.id + '; ' +
+          'update threads set (votes) = (votes + ' + deltaVoice + ') where id = ' + threadId + ';';
+        let q1 = t.none(query);
+        let q2 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
           ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
           ' on (threads.forum=forums.id) where threads.id = $1', threadId);
-        return t.batch([q1, q2, q3]);
+        return t.batch([q1, q2]);
       })
         .then( data => {
-          let d = JSON.stringify(data[2]);
+          let d = JSON.stringify(data[1]);
           d = JSON.parse(d);
           res.status(200).send(d);
         })
     })
     .catch( err => {
       db.tx(t => {
-        let q1 = t.none('insert into votes (username, voice, thread) values ($1, $2, $3)', [nickname, voice, threadId]);
-        let q2 = t.none('update threads set (votes) = (votes + ' + voice + ') where id = $1', threadId);
-        let q3 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
+        let query = 'insert into votes (username, voice, thread) values (\'' + nickname + '\',' +
+          voice + ',' + threadId + '); update threads set (votes) = (votes + ' + voice + ') where id = ' + threadId + ';';
+        let q1 = t.none(query);
+        let q2 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
           ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
           ' on (threads.forum=forums.id) where threads.id = $1', threadId);
-        return t.batch([q1, q2, q3]);
+        return t.batch([q1, q2]);
       })
         .then( data => {
-          let d = JSON.stringify(data[2]);
+          let d = JSON.stringify(data[1]);
           d = JSON.parse(d);
           res.status(200).send(d);
         })
         .catch ( err => {
           res.status(404).send(err);
         });
-    })
+    });
 }
 
 function getThread(req, res, next) {

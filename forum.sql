@@ -10,10 +10,10 @@ DROP INDEX IF EXISTS unique_slug_forums;
 DROP INDEX IF EXISTS idx_thread_user;
 DROP INDEX IF EXISTS idx_thread_forum;
 DROP INDEX IF EXISTS unique_slug_thread;
-DROP INDEX IF EXISTS idx_post_author;
-DROP INDEX IF EXISTS idx_post_forum;
-DROP INDEX IF EXISTS idx_post_thread;
-DROP INDEX IF EXISTS idx_post_parent;
+--DROP INDEX IF EXISTS idx_post_author;
+--DROP INDEX IF EXISTS idx_post_forum;
+--DROP INDEX IF EXISTS idx_post_thread;
+--DROP INDEX IF EXISTS idx_post_parent;
 DROP INDEX IF EXISTS idx_thread_created;
 DROP INDEX IF EXISTS idx_post_created;
 DROP INDEX IF EXISTS idx_post_t_c_i;
@@ -85,10 +85,10 @@ CREATE TABLE IF NOT EXISTS posts (
   path INT ARRAY
 );
 
-CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
-CREATE INDEX IF NOT EXISTS idx_post_forum ON posts(forum);
-CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(thread);
-CREATE INDEX IF NOT EXISTS idx_post_created ON posts(created);
+--CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
+--CREATE INDEX IF NOT EXISTS idx_post_forum ON posts(forum);
+--CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(thread);
+--CREATE INDEX IF NOT EXISTS idx_post_created ON posts(created);
 CREATE INDEX IF NOT EXISTS idx_post_p1 ON posts((path[1]));
 CREATE INDEX IF NOT EXISTS idx_post_t_c_i ON posts(thread, created, id);
 CREATE INDEX IF NOT EXISTS idx_post_p_t_i ON posts(parent, thread, id);
