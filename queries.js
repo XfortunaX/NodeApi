@@ -9,6 +9,7 @@ var options = {
 };
 
 var pgp = require('pg-promise')(options);
+pgp.pg.defaults.poolSize = 30;
 var connectionString = "postgres://docker:docker@localhost:5432/docker";
 var db = pgp(connectionString);
 
