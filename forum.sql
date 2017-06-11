@@ -82,13 +82,12 @@ CREATE TABLE IF NOT EXISTS posts (
   message TEXT NOT NULL,
   parent INTEGER DEFAULT 0,
   thread INTEGER NOT NULL REFERENCES threads (id),
-  path BIGINT ARRAY
+  path INT ARRAY
 );
 
 CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
 CREATE INDEX IF NOT EXISTS idx_post_forum ON posts(forum);
 CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(thread);
-CREATE INDEX IF NOT EXISTS idx_post_parent ON posts(parent);
 CREATE INDEX IF NOT EXISTS idx_post_created ON posts(created);
 CREATE INDEX IF NOT EXISTS idx_post_p1 ON posts((path[1]));
 CREATE INDEX IF NOT EXISTS idx_post_t_c_i ON posts(thread, created, id);
@@ -112,9 +111,6 @@ CREATE TABLE IF NOT EXISTS users_forums (
   user_nickname VARCHAR REFERENCES users (nickname) NOT NULL,
   forum_id INTEGER REFERENCES forums(id) NOT NULL
 );
-
-ALTER TABLE users_forums DROP CONSTRAINT IF EXISTS unique_uf;
-ALTER TABLE users_forums ADD CONSTRAINT unique_uf UNIQUE (user_nickname, forum_id);
 
 CREATE INDEX IF NOT EXISTS idx_uf_user ON users_forums (user_nickname);
 CREATE INDEX IF NOT EXISTS idx_uf_forum ON users_forums (forum_id);
