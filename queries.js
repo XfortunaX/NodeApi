@@ -136,11 +136,11 @@ function updateUser(req, res, next) {
         let d = JSON.stringify(data);
         d = JSON.parse(d);
         res.status(200).send(d);
-      }
-      else if (!isEmpty(email)) {
+      } else if (!isEmpty(email)) {
         db.none('select * from users where email = $1 and nickname != $2', [email, nicknameUser])
           .then( () => {
-            db.one(updateUserQuery(fullname, about), nicknameUser)
+            email = '';
+            db.one(updateUserQuery(fullname, email, about), nicknameUser)
               .then(data => {
                 let d = JSON.stringify(data);
                 d = JSON.parse(d);
@@ -152,7 +152,7 @@ function updateUser(req, res, next) {
           })
       }
       db.one(updateUserQuery(fullname, email, about), nicknameUser)
-        .then( data => {
+        .then(data => {
           let d = JSON.stringify(data);
           d = JSON.parse(d);
           res.status(200).send(d);
