@@ -90,19 +90,19 @@ function createUser(req, res, next) {
 
   db.many('select * from users where upper(nickname) = $1 or email = $2', [nickname.toUpperCase(), email])
     .then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(409).send(d);
-})
-.catch( err => {
-    return db.one('insert into users (nickname, fullname, about, email) values (\'' + nickname + '\',\''
-      + fullname + '\',\'' + about +'\',\'' + email + '\') returning *');
-})
-.then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(201).send(d);
-});
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(409).send(d);
+    })
+    .catch( err => {
+      return db.one('insert into users (nickname, fullname, about, email) values (\'' + nickname + '\',\''
+        + fullname + '\',\'' + about +'\',\'' + email + '\') returning *');
+    })
+    .then( data => {
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(201).send(d);
+    });
 }
 
 function getUser(req, res, next) {
@@ -110,13 +110,13 @@ function getUser(req, res, next) {
 
   db.one('select * from users where upper(nickname) = $1', nickname.toUpperCase())
     .then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function updateUser(req, res, next) {
@@ -128,36 +128,35 @@ function updateUser(req, res, next) {
 
   db.one('select * from users where upper(nickname) = $1', nickname.toUpperCase())
     .catch( err => {
-    res.status(404).send(err);
-})
-.then( data => {
-    nicknameUser = data.nickname;
-  if (isEmpty(email) && isEmpty(about) && isEmpty(fullname)) {
-    let d = JSON.stringify(data);
-    d = JSON.parse(d);
-    res.status(200).send(d);
-  }
-  else if (!isEmpty(email)) {
-    db.none('select * from users where email = $1 and nickname != $2', [email, nicknameUser])
-      .then( () => {
-      db.one(updateUserQuery(fullname, about), nicknameUser)
-      .then(data => {
-      let d = JSON.stringify(data);
-    d = JSON.parse(d);
-    res.status(201).send(d);
-  });
-  })
-  .catch( () => {
-      res.status(409).send();
-  })
-  }
-  db.one(updateUserQuery(fullname, email, about), nicknameUser)
+      res.status(404).send(err);
+    })
     .then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-});
-});
+      nicknameUser = data.nickname;
+      if (isEmpty(email) && isEmpty(about) && isEmpty(fullname)) {
+        let d = JSON.stringify(data);
+        d = JSON.parse(d);
+        res.status(200).send(d);
+      } else if (!isEmpty(email)) {
+        db.none('select * from users where email = $1 and nickname != $2', [email, nicknameUser])
+          .then( () => {
+            db.one(updateUserQuery(fullname, about), nicknameUser)
+              .then(data => {
+                let d = JSON.stringify(data);
+                d = JSON.parse(d);
+                res.status(201).send(d);
+              });
+          })
+          .catch( () => {
+            res.status(409).send();
+          })
+      }
+      db.one(updateUserQuery(fullname, email, about), nicknameUser)
+        .then( data => {
+          let d = JSON.stringify(data);
+          d = JSON.parse(d);
+          res.status(200).send(d);
+        });
+    });
 }
 
 function createForum(req, res, next) {
@@ -167,32 +166,32 @@ function createForum(req, res, next) {
 
   db.one('select nickname from users where upper(nickname) = $1', username.toUpperCase())
     .catch( () => {
-    res.status(404).send();
-})
-.then( data => {
-    username = data.nickname;
-  return db.one('select username as \"user\", slug, posts, threads,' +
-    ' title from forums where username = $1 and slug = $2', [username, slug])
-})
-.then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(409).send(d);
-})
-.catch( () => {
-    db.tx(t => {
-    let q1 = t.none('insert into forums (title, username, slug) ' +
-      'values (\'' + title + '\',\'' + username + '\',\'' + slug + '\')');
-  let q2 = t.one('select username as \"user\", slug, posts, threads,' +
-    ' title from forums where username = $1 and slug = $2', [username, slug]);
-  return t.batch([q1, q2]);
-})
-.then( data => {
-    let d = JSON.stringify(data[1]);
-  d = JSON.parse(d);
-  res.status(201).send(d);
-})
-})
+      res.status(404).send();
+    })
+    .then( data => {
+      username = data.nickname;
+      return db.one('select username as \"user\", slug, posts, threads,' +
+        ' title from forums where username = $1 and slug = $2', [username, slug])
+    })
+    .then( data => {
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(409).send(d);
+    })
+    .catch( () => {
+      db.tx(t => {
+        let q1 = t.none('insert into forums (title, username, slug) ' +
+          'values (\'' + title + '\',\'' + username + '\',\'' + slug + '\')');
+        let q2 = t.one('select username as \"user\", slug, posts, threads,' +
+          ' title from forums where username = $1 and slug = $2', [username, slug]);
+        return t.batch([q1, q2]);
+      })
+        .then( data => {
+          let d = JSON.stringify(data[1]);
+          d = JSON.parse(d);
+          res.status(201).send(d);
+        })
+    })
 }
 
 function getForum(req, res, next) {
@@ -200,13 +199,13 @@ function getForum(req, res, next) {
 
   db.one('select title, username as \"user\", slug, posts, threads from forums where slug = $1', slug)
     .then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function createThread(req, res, next) {
@@ -221,40 +220,40 @@ function createThread(req, res, next) {
 
   db.tx( t => {
     let q1 = t.one('select id from forums where slug = $1', slug);
-  let q2 = t.one('select nickname from users where upper(nickname) = $1', author.toUpperCase());
-  return t.batch([q1, q2]);
-})
-.catch( err => {
-    res.status(404).send(err);
-})
-.then( data => {
-    forumId = data[0].id;
-  author = data[1].nickname;
-  return db.one('select threads.id, threads.author, forums.slug as \"forum\", threads.message, threads.title, threads.slug, ' +
-    'threads.created from threads inner join forums on threads.forum = forums.id where threads.slug = $1', slugThread);
-})
-.then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(409).send(d);
-})
-.catch( () => {
-    db.tx(t => {
-    let q1 = t.one(insertThread(slugThread, created), [author, forumId, message, title]);
-  let q2 = t.none('update forums set (threads) = (threads + ' + 1 + ') where id = $1', forumId);
-  let q3 = t.none('insert into users_forums values (\'' + author + '\',\'' + forumId + '\')');
-  return t.batch([q1, q2, q3]);
-})
-.then( data => {
-    return db.one('select threads.id, threads.author, forums.slug as \"forum\", threads.message, threads.title, threads.slug, ' +
-      'threads.created from threads inner join forums on threads.forum = forums.id where threads.id = $1', data[0].id);
-})
-.then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(201).send(d);
-})
-});
+    let q2 = t.one('select nickname from users where upper(nickname) = $1', author.toUpperCase());
+    return t.batch([q1, q2]);
+  })
+    .catch( err => {
+      res.status(404).send(err);
+    })
+    .then( data => {
+      forumId = data[0].id;
+      author = data[1].nickname;
+      return db.one('select threads.id, threads.author, forums.slug as \"forum\", threads.message, threads.title, threads.slug, ' +
+        'threads.created from threads inner join forums on threads.forum = forums.id where threads.slug = $1', slugThread);
+    })
+    .then( data => {
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(409).send(d);
+    })
+    .catch( () => {
+      db.tx(t => {
+        let q1 = t.one(insertThread(slugThread, created), [author, forumId, message, title]);
+        let q2 = t.none('update forums set (threads) = (threads + ' + 1 + ') where id = $1', forumId);
+        let q3 = t.none('insert into users_forums values (\'' + author + '\',\'' + forumId + '\') ON CONFLICT ON CONSTRAINT unique_uf DO NOTHING');
+        return t.batch([q1, q2, q3]);
+      })
+        .then( data => {
+          return db.one('select threads.id, threads.author, forums.slug as \"forum\", threads.message, threads.title, threads.slug, ' +
+            'threads.created from threads inner join forums on threads.forum = forums.id where threads.id = $1', data[0].id);
+        })
+        .then( data => {
+          let d = JSON.stringify(data);
+          d = JSON.parse(d);
+          res.status(201).send(d);
+        })
+    });
 }
 
 function getThreads(req, res, next) {
@@ -268,34 +267,34 @@ function getThreads(req, res, next) {
 
   db.one('select * from forums where slug = $1', slug)
     .then( data => {
-    let query = 'select threads.slug, threads.id, threads.title, threads.message, threads.author, ' +
-      ' threads.created, forums.slug as forum, threads.votes from threads ' +
-      ' inner join forums ON (forums.id = threads.forum) where threads.forum = $1';
-  if(!isEmpty(since)) {
-    if(desc === 'desc') {
-      query += ' and threads.created <= $2';
-    } else {
-      query += ' and threads.created >= $2';
-    }
-  }
-  query +=' order by threads.created ' + desc;
-  if(!isEmpty(limit)) {
-    query += ' limit ' + limit;
-  }
-  if(isEmpty(since)) {
-    return db.any(query, data.id)
-  } else {
-    return db.any(query, [data.id, since])
-  }
-})
-.then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      let query = 'select threads.slug, threads.id, threads.title, threads.message, threads.author, ' +
+        ' threads.created, forums.slug as forum, threads.votes from threads ' +
+        ' inner join forums ON (forums.id = threads.forum) where threads.forum = $1';
+      if(!isEmpty(since)) {
+        if(desc === 'desc') {
+          query += ' and threads.created <= $2';
+        } else {
+          query += ' and threads.created >= $2';
+        }
+      }
+      query +=' order by threads.created ' + desc;
+      if(!isEmpty(limit)) {
+        query += ' limit ' + limit;
+      }
+      if(isEmpty(since)) {
+        return db.any(query, data.id)
+      } else {
+        return db.any(query, [data.id, since])
+      }
+    })
+    .then( data => {
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function createOneThread(req, res, next) {
@@ -304,76 +303,299 @@ function createOneThread(req, res, next) {
   let forumSlug = 0;
   let threadId = 0;
   let forumId = 0;
+  let num = 0;
+  let numdif = 50;
   let query = "threads.id";
   if(!isNumeric(slug)) {
     query = "threads.slug";
   }
 
+  let parents = [];
+
   for (let j = 0; j < posts.length; j++) {
-    if(!('parent' in posts[j])) {
+    if (!('parent' in posts[j])) {
       posts[j].parent = 0;
       posts[j].path = [];
     }
+    if (posts[j].parent !== 0) {
+      parents.push(posts[j].parent);
+    }
   }
+  let parentsSet = new Set(parents);
 
-  db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join forums on threads.forum = forums.id ' +
-    ' where ' + query + ' = $1', slug)
+  db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join' +
+    ' forums on threads.forum = forums.id where ' + query + ' = $1', slug)
+    .catch( err => {
+      res.status(404).send(err);
+    })
     .then( data => {
-    forumSlug = data.slug;
-  threadId = data.id;
-  forumId = data.forumId;
-  let quePost = 'select posts.id, posts.path from posts where posts.thread = ' + threadId +
-    ' and posts.id = ANY(ARRAY[' + posts[0].parent;
-  for(let j = 1; j < posts.length; j++) {
-    quePost += ',' + posts[j].parent;
-  }
-  quePost += '])';
-  return db.any(quePost);
-})
-.then( data => {
-    let check = 0;
-  for (let i = 0; i < posts.length; i += 1) {
-    check = 1;
-    if (posts[i].parent === 0) {
-      check = 0;
-    } else {
-      for (let j = 0; j < data.length && check === 1; j += 1) {
-        if (posts[i].parent === data[j].id) {
-          check = 0;
-          posts[i].path = data[j].path;
+      forumSlug = data.slug;
+      threadId = data.id;
+      forumId = data.forumId;
+      return db.tx( t => {
+        let queries = [];
+        if (parentsSet.size < 10) {
+          parentsSet.forEach((value, valueAgain, set) => {
+            let q1 = t.one('select id from posts where id = ' + value + ' and thread = ' + threadId);
+            queries.push(q1);
+          });
         }
-      }
-    }
-    if(check === 1) {
-      res.status(409).send();
-    }
-  }
-  return db.tx( t => {
-      let queries = posts.map( l => {
-          let query = 'insert into users_forums values (\'' + l.author + '\',\'' + forumId + '\');';
-  query += ' INSERT INTO posts (id, author, message, parent, thread, forum, path) ' +
-    'VALUES ((SELECT nextval(pg_get_serial_sequence(\'posts\', \'id\'))),\'' + l.author + '\',\'' + l.message + '\',' +
-    '\'' + l.parent +'\',\'' + threadId + '\',\'' + forumSlug + '\', ARRAY[';
-  for(let i = 0; i < l.path.length; i += 1) {
-    query += l.path[i] + ',';
-  }
-  query += '(SELECT currval(pg_get_serial_sequence(\'posts\', \'id\')))]) returning *';
-  return t.one(query);
-});
-  let q1 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
-  queries.push(q1);
-  return t.batch(queries);
-})
-})
-.then( data => {
-    data.pop();
-  let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(201).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+        return t.batch(queries);
+      })
+    })
+    .catch( err => {
+      res.status(409).send(err);
+    })
+    .then( data => {
+      return db.tx( t => {
+        let query_posts = [];
+        let query = '';
+        for (let j = 0; j < posts.length; j += numdif) {
+          num += 1;
+          query += ' INSERT INTO posts (id, author, message, parent, thread, forum, path) VALUES';
+          for (let i = j; i < posts.length && (i - j < numdif); i += 1) {
+            query += ' ((SELECT nextval(\'posts_id_seq\')),\'' + posts[i].author + '\',\'' + posts[i].message + '\',' +
+              posts[i].parent + ',\'' + threadId + '\',\'' + forumSlug + '\',' + ' array_append(' +
+              '(select path from posts where id = ' + posts[i].parent + ')::BIGINT[], (SELECT currval(\'posts_id_seq\'))))';
+            if (i < posts.length - 1 && i - j < numdif - 1) {
+              query += ',';
+            }
+          }
+          query += ' returning id, created, author, parent, forum, message, thread; ';
+        }
+        let q1 = t.any(query);
+        query_posts.push(q1);
+        let que = 'insert into users_forums values (\'' + posts[0].author + '\',\'' + forumId + '\')';
+        for (let i = 1; i < posts.length; i += 1) {
+          query += ', (\'' + posts[i].author + '\',\'' + forumId + '\')';
+        }
+        que += 'ON CONFLICT ON CONSTRAINT unique_uf DO NOTHING';
+        let q2 = t.none(que);
+        query_posts.push(q2);
+        let q3 = t.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
+        query_posts.push(q3);
+        return t.batch(query_posts);
+      })
+    })
+    .then( data => {
+      data.pop();
+      data.pop();
+      let d = JSON.stringify(data[0]);
+      d = JSON.parse(d);
+      res.status(201).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
+
+  // db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join forums on threads.forum = forums.id ' +
+  //   ' where ' + query + ' = $1', slug)
+  //   .then( data => {
+  //     forumSlug = data.slug;
+  //     threadId = data.id;
+  //     forumId = data.forumId;
+  //     return db.tx( t => {
+  //       let q1 = t.any('select id, path from posts where thread = $1 and id = ANY ($2)', [threadId, parents]);
+  //       let q2 = t.any('SELECT nextval(\'posts_id_seq\') from generate_series(1, $1)', posts.length);
+  //       return t.batch([q1, q2]);
+  //     })
+  //   })
+  //   .then( data => {
+  //     // console.log(data);
+  //     let check = 0;
+  //     for (let i = 0; i < posts.length; i += 1) {
+  //       check = 1;
+  //       posts[i].id = parseInt(data[1][i].nextval);
+  //       if (posts[i].parent === 0) {
+  //         check = 0;
+  //       } else {
+  //         for (let j = 0; j < data[0].length && check === 1; j += 1) {
+  //           if (posts[i].parent === data[0][j].id) {
+  //             check = 0;
+  //             posts[i].path = data[0][j].path;
+  //           }
+  //         }
+  //       }
+  //       if(check === 1) {
+  //         res.status(409).send();
+  //       }
+  //     }
+  //     // console.log(posts);
+  //     return db.tx( t => {
+  //       let query2 = ' INSERT INTO posts (id, author, message, parent, thread, forum, path) VALUES';
+  //       for (let i = 0; i < posts.length; i += 1) {
+  //         query2 += ' (' + posts[i].id + ',\'' + posts[i].author + '\',\'' + posts[i].message + '\',' +
+  //           posts[i].parent + ',\'' + threadId + '\',\'' + forumSlug + '\',' + 'array_append(ARRAY[' +
+  //           posts[i].path + ']::INTEGER[],' + posts[i].id + '))';
+  //         if (i < posts.length - 1) {
+  //           query2 += ',';
+  //         }
+  //       }
+  //       query2 += ' returning id, created, author, parent, forum, message, thread';
+  //       // console.log(query2);
+  //       let q1 = t.any(query2);
+  //       let que = 'insert into users_forums values (\'' + posts[0].author + '\', ' + forumId + ')';
+  //       for (let i = 1; i < posts.length; i += 1) {
+  //         que += ', (\'' + posts[i].author + '\', ' + forumId + ')';
+  //       }
+  //       que += 'ON CONFLICT ON CONSTRAINT unique_uf DO NOTHING';
+  //       let q2 = t.none(que);
+  //       // let queries = posts.map( l => {
+  //       //   let query = 'INSERT INTO posts (id, author, message, parent, thread, forum, path) ' +
+  //       //     'VALUES ($1, $2, $3, $4, $5, $6, array_append($7::INTEGER[], $8)) returning id, created, author, parent, ' +
+  //       //     'forum, message, thread; ' +
+  //       //     'INSERT INTO users_forums values ($9, $10)';
+  //       //   return t.one(query, [l.id, l.author, l.message, l.parent, threadId, forumSlug, l.path, l.id, l.author, forumId]);
+  //       // });
+  //       let q = t.none('update forums set (posts) = (posts + $1) where forums.slug = $2', [posts.length, forumSlug]);
+  //       return t.batch([q1, q2, q]);
+  //     })
+  //   })
+  //   .then( data => {
+  //     // console.log(data);
+  //     data.pop();
+  //     let d = JSON.stringify(data[0]);
+  //     d = JSON.parse(d);
+  //     res.status(201).send(d);
+  //   })
+  //   .catch( err => {
+  //     res.status(404).send(err);
+  //   });
+
+  // db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join forums on threads.forum = forums.id ' +
+  //   ' where ' + query + ' = $1', slug)
+  //   .then( data => {
+  //     forumSlug = data.slug;
+  //     threadId = data.id;
+  //     forumId = data.forumId;
+  //     return db.tx( t => {
+  //       let quePost = 'select posts.id, posts.path from posts where posts.thread = ' + threadId +
+  //         ' and posts.id = ANY(ARRAY[' + posts[0].parent;
+  //       let queId = 'select(nextval(\'posts_id_seq\'));';
+  //       for(let j = 1; j < posts.length; j++) {
+  //         quePost += ',' + posts[j].parent;
+  //       }
+  //       quePost += '])';
+  //       let q1 = db.any(quePost);
+  //       let q2 = db.any(queId);
+  //       return t.batch([q1, q2]);
+  //     })
+  //   })
+  //   .then( data => {
+  //     //console.log(data);
+  //     let check = 0;
+  //     for (let i = 0; i < posts.length; i += 1) {
+  //       check = 1;
+  //       posts[i].id = parseInt(data[1][i].nextval);
+  //       if (posts[i].parent === 0) {
+  //         check = 0;
+  //       } else {
+  //         for (let j = 0; j < data[0].length && check === 1; j += 1) {
+  //           if (posts[i].parent === data[0][j].id) {
+  //             check = 0;
+  //             posts[i].path = data[0][j].path;
+  //           }
+  //         }
+  //       }
+  //       if(check === 1) {
+  //         res.status(409).send();
+  //       }
+  //     }
+  //     return db.tx( t => {
+  //       let query2 = ' INSERT INTO posts (id, author, message, parent, thread, forum, path) VALUES';
+  //       for (let i = 0; i < posts.length; i += 1) {
+  //         query2 += ' (' + posts[i].id + ',\'' + posts[i].author + '\',\'' + posts[i].message + '\',' +
+  //           posts[i].parent + ',\'' + threadId + '\',\'' + forumSlug + '\',' + ' ARRAY[';
+  //         for(let j = 0; j < posts[i].path.length; j += 1) {
+  //           query2 += posts[i].path[j] + ', ';
+  //         }
+  //         query2 += posts[i].id +'])';
+  //         if (i < posts.length - 1) {
+  //           query2 += ',';
+  //         }
+  //       }
+  //       query2 += ' returning id, created, author, parent, forum, message, thread';
+  //       //console.log(query2);
+  //       let q1 = db.any(query2);
+  //       let que = 'insert into users_forums values (\'' + posts[0].author + '\', ' + forumId + ')';
+  //       for (let i = 1; i < posts.length; i += 1) {
+  //         que += ', (\'' + posts[i].author + '\', ' + forumId + ')';
+  //       }
+  //       let q2 = db.none(que);
+  //       let q3 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
+  //       return t.batch([q1, q2, q3]);
+  //     })
+  //   })
+  //   .then( data => {
+  //     //console.log(data);
+  //     data.pop();
+  //     data.pop();
+  //     let d = JSON.stringify(data[0]);
+  //     d = JSON.parse(d);
+  //     res.status(201).send(d);
+  //   })
+  //   .catch( err => {
+  //       res.status(404).send(err);
+  //   });
+
+  // db.one('select threads.id, forums.slug, forums.id as \"forumId\" from threads inner join forums on threads.forum = forums.id ' +
+  //   ' where ' + query + ' = $1', slug)
+  //   .then( data => {
+  //     forumSlug = data.slug;
+  //     threadId = data.id;
+  //     forumId = data.forumId;
+  //     let quePost = 'select posts.id, posts.path from posts where posts.thread = ' + threadId +
+  //       ' and posts.id = ANY(ARRAY[' + posts[0].parent;
+  //     for(let j = 1; j < posts.length; j++) {
+  //       quePost += ',' + posts[j].parent;
+  //     }
+  //     quePost += '])';
+  //     return db.any(quePost);
+  //   })
+  //   .then( data => {
+  //     let check = 0;
+  //     for (let i = 0; i < posts.length; i += 1) {
+  //       check = 1;
+  //       if (posts[i].parent === 0) {
+  //         check = 0;
+  //       } else {
+  //         for (let j = 0; j < data.length && check === 1; j += 1) {
+  //           if (posts[i].parent === data[j].id) {
+  //             check = 0;
+  //             posts[i].path = data[j].path;
+  //           }
+  //         }
+  //       }
+  //       if(check === 1) {
+  //         res.status(409).send();
+  //       }
+  //     }
+  //     return db.tx( t => {
+  //       let queries = posts.map( l => {
+  //         let query = 'insert into users_forums values (\'' + l.author + '\',\'' + forumId + '\');';
+  //         query += ' INSERT INTO posts (id, author, message, parent, thread, forum, path) ' +
+  //         'VALUES ((SELECT nextval(pg_get_serial_sequence(\'posts\', \'id\'))),\'' + l.author + '\',\'' + l.message + '\',' +
+  //         '\'' + l.parent +'\',\'' + threadId + '\',\'' + forumSlug + '\', ARRAY[';
+  //         for(let i = 0; i < l.path.length; i += 1) {
+  //           query += l.path[i] + ',';
+  //         }
+  //         query += '(SELECT currval(pg_get_serial_sequence(\'posts\', \'id\')))]) returning *';
+  //         return t.one(query);
+  //       });
+  //       let q1 = db.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
+  //       queries.push(q1);
+  //       return t.batch(queries);
+  //     })
+  //   })
+  //   .then( data => {
+  //     data.pop();
+  //     let d = JSON.stringify(data);
+  //     d = JSON.parse(d);
+  //     res.status(201).send(d);
+  //   })
+  //   .catch( err => {
+  //       res.status(404).send(err);
+  //   });
 }
 
 function createVote(req, res, next) {
@@ -389,46 +611,91 @@ function createVote(req, res, next) {
 
   db.one('select id from threads where ' + slug_or_id + ' = $1', slug)
     .catch( err => {
-    res.status(404).send();
-})
-.then( data => {
-    threadId = data.id;
-  return db.one('select voice, id from votes where username = $1 and thread = $2', [nickname, threadId])
-})
-.then( data => {
-    deltaVoice = -(data.voice - voice);
-  db.tx(t => {
-    let q1 = t.none('update votes set (voice) = (' + voice + ') where id = $1', data.id);
-  let q2 = t.none('update threads set (votes) = (votes + ' + deltaVoice + ') where id = $1', threadId);
-  let q3 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
-    ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
-    ' on (threads.forum=forums.id) where threads.id = $1', threadId);
-  return t.batch([q1, q2, q3]);
-})
-.then( data => {
-    let d = JSON.stringify(data[2]);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-})
-.catch( err => {
-    db.tx(t => {
-    let q1 = t.none('insert into votes (username, voice, thread) values ($1, $2, $3)', [nickname, voice, threadId]);
-  let q2 = t.none('update threads set (votes) = (votes + ' + voice + ') where id = $1', threadId);
-  let q3 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
-    ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
-    ' on (threads.forum=forums.id) where threads.id = $1', threadId);
-  return t.batch([q1, q2, q3]);
-})
-.then( data => {
-    let d = JSON.stringify(data[2]);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch ( err => {
-    res.status(404).send(err);
-});
-})
+      res.status(404).send();
+    })
+    .then( data => {
+      threadId = data.id;
+      return db.one('select voice, id from votes where username = $1 and thread = $2', [nickname, threadId])
+    })
+    .then( data => {
+      deltaVoice = -(data.voice - voice);
+      db.tx(t => {
+        let query = 'update votes set (voice) = (' + voice + ') where id = ' + data.id + '; ' +
+          'update threads set (votes) = (votes + ' + deltaVoice + ') where id = ' + threadId + ';';
+        let q1 = t.none(query);
+        let q2 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
+          ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
+          ' on (threads.forum=forums.id) where threads.id = $1', threadId);
+        return t.batch([q1, q2]);
+      })
+        .then( data => {
+          let d = JSON.stringify(data[1]);
+          d = JSON.parse(d);
+          res.status(200).send(d);
+        })
+    })
+    .catch( err => {
+      db.tx(t => {
+        let query = 'insert into votes (username, voice, thread) values (\'' + nickname + '\',' +
+          voice + ',' + threadId + '); update threads set (votes) = (votes + ' + voice + ') where id = ' + threadId + ';';
+        let q1 = t.none(query);
+        let q2 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
+          ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
+          ' on (threads.forum=forums.id) where threads.id = $1', threadId);
+        return t.batch([q1, q2]);
+      })
+        .then( data => {
+          let d = JSON.stringify(data[1]);
+          d = JSON.parse(d);
+          res.status(200).send(d);
+        })
+        .catch ( err => {
+          res.status(404).send(err);
+        });
+    });
+
+  // db.one('select id from threads where ' + slug_or_id + ' = $1', slug)
+  //   .catch( err => {
+  //     res.status(404).send();
+  //   })
+  //   .then( data => {
+  //     threadId = data.id;
+  //     return db.one('select voice, id from votes where username = $1 and thread = $2', [nickname, threadId])
+  //   })
+  //   .then( data => {
+  //       deltaVoice = -(data.voice - voice);
+  //     db.tx(t => {
+  //       let q1 = t.none('update votes set (voice) = (' + voice + ') where id = $1', data.id);
+  //       let q2 = t.none('update threads set (votes) = (votes + ' + deltaVoice + ') where id = $1', threadId);
+  //       let q3 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
+  //         ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
+  //         ' on (threads.forum=forums.id) where threads.id = $1', threadId);
+  //       return t.batch([q1, q2, q3]);
+  //     })
+  //     .then( data => {
+  //         let d = JSON.stringify(data[2]);
+  //       d = JSON.parse(d);
+  //       res.status(200).send(d);
+  //     })
+  //   })
+  //   .catch( err => {
+  //       db.tx(t => {
+  //       let q1 = t.none('insert into votes (username, voice, thread) values ($1, $2, $3)', [nickname, voice, threadId]);
+  //       let q2 = t.none('update threads set (votes) = (votes + ' + voice + ') where id = $1', threadId);
+  //       let q3 = t.one('select forums.slug as forum, threads.author, threads.created, threads.id,' +
+  //         ' threads.message, threads.slug, threads.title, threads.votes from threads inner join forums' +
+  //         ' on (threads.forum=forums.id) where threads.id = $1', threadId);
+  //       return t.batch([q1, q2, q3]);
+  //     })
+  //     .then( data => {
+  //         let d = JSON.stringify(data[2]);
+  //       d = JSON.parse(d);
+  //       res.status(200).send(d);
+  //     })
+  //     .catch ( err => {
+  //         res.status(404).send(err);
+  //     });
+  //   })
 }
 
 function getThread(req, res, next) {
@@ -442,13 +709,13 @@ function getThread(req, res, next) {
     ' threads.message, threads.id, threads.votes' +
     ' from threads inner join forums on (threads.forum = forums.id) where ' + query + ' = $1', slug)
     .then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function updateThread(req, res, next) {
@@ -460,32 +727,32 @@ function updateThread(req, res, next) {
 
   db.one('select * from threads where ' + query + ' = $1', slug)
     .then( data => {
-    return db.tx( (t) => {
-      let q1 = t.one('select forums.slug as forum, threads.author, threads.created, threads.title,' +
-        ' threads.slug, threads.message, threads.id from threads inner join forums' +
-        ' on (threads.forum=forums.id) where ' + query + ' = $1', slug);
-  if(!isEmpty(req.body.title) && !isEmpty(req.body.message)) {
-    q1 = t.none('update threads set (title, message) = (\'' + req.body.title + '\',' +
-      '\'' + req.body.message + '\') where ' + query + ' = $1', slug);
-  } else if (!isEmpty(req.body.title)) {
-    q1 = t.none('update threads set (title) = (\'' + req.body.title + '\') where ' + query + ' = $1', slug);
-  } else if (!isEmpty(req.body.message)) {
-    q1 = t.none('update threads set (message) = (\'' + req.body.message + '\') where ' + query + ' = $1', slug);
-  }
-  let q2 = t.one('select forums.slug as forum, threads.author, threads.created, threads.title,' +
-    ' threads.slug, threads.message, threads.id from threads inner join forums' +
-    ' on (threads.forum=forums.id) where ' + query + ' = $1', slug);
-  return t.batch([q1, q2]);
-})
-})
-.then( data => {
-    let d = JSON.stringify(data[1]);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      return db.tx( (t) => {
+        let q1 = t.one('select forums.slug as forum, threads.author, threads.created, threads.title,' +
+          ' threads.slug, threads.message, threads.id from threads inner join forums' +
+          ' on (threads.forum=forums.id) where ' + query + ' = $1', slug);
+        if(!isEmpty(req.body.title) && !isEmpty(req.body.message)) {
+          q1 = t.none('update threads set (title, message) = (\'' + req.body.title + '\',' +
+            '\'' + req.body.message + '\') where ' + query + ' = $1', slug);
+        } else if (!isEmpty(req.body.title)) {
+          q1 = t.none('update threads set (title) = (\'' + req.body.title + '\') where ' + query + ' = $1', slug);
+        } else if (!isEmpty(req.body.message)) {
+          q1 = t.none('update threads set (message) = (\'' + req.body.message + '\') where ' + query + ' = $1', slug);
+        }
+        let q2 = t.one('select forums.slug as forum, threads.author, threads.created, threads.title,' +
+          ' threads.slug, threads.message, threads.id from threads inner join forums' +
+          ' on (threads.forum=forums.id) where ' + query + ' = $1', slug);
+        return t.batch([q1, q2]);
+      })
+    })
+    .then( data => {
+      let d = JSON.stringify(data[1]);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function getPosts(req, res, next) {
@@ -514,44 +781,44 @@ function getPosts(req, res, next) {
 
   db.one('select * from threads where ' + str_query + ' = $1', slug)
     .then( data => {
-    if(sort === 'flat') {
-    query = 'SELECT author, created, id, isEdited, message, thread, forum, parent FROM posts WHERE thread = ' + data.id +
-      ' ORDER BY created ' + desc + ', id ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker;
-    return db.any(query);
-  } else if(sort === 'tree') {
-    query = 'SELECT author, created, id, isEdited, message, thread, forum, parent FROM posts WHERE thread = ' + data.id +
-      ' ORDER BY path ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker;
-    return db.any(query);
-  } else if(sort === 'parent_tree') {
-    return db.tx( (t) => {
-        let query = 'SELECT author, created, id, isEdited, message, thread, ' +
-          'forum, parent FROM posts WHERE path[1] in (SELECT id FROM posts WHERE parent = 0 ' +
-          'AND thread = ' + data.id + ' ORDER BY id ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker + ') ' +
-          'and thread = ' + data.id + ' ORDER BY path ' + desc + ', id ' + desc;
-    let q1 = db.any(query);
-    let q2 = db.any('SELECT id FROM posts WHERE parent = 0 AND thread = ' + data.id + ' ORDER BY id ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker);
-    return t.batch([q1, q2]);
-  });
-  }
-})
-.then( data => {
-    let result = 0;
-  if(sort === 'flat' || sort === 'tree') {
-    marker += data.length;
-    result = data;
-  } else {
-    result = data[0];
-    marker += data[1].length;
-  }
-  res.status(200)
-    .json({
-      marker: String(marker),
-      posts: result
+      if(sort === 'flat') {
+        query = 'SELECT author, created, id, isEdited, message, thread, forum, parent FROM posts WHERE thread = ' + data.id +
+          ' ORDER BY created ' + desc + ', id ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker;
+        return db.any(query);
+      } else if(sort === 'tree') {
+        query = 'SELECT author, created, id, isEdited, message, thread, forum, parent FROM posts WHERE thread = ' + data.id +
+          ' ORDER BY path ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker;
+        return db.any(query);
+      } else if(sort === 'parent_tree') {
+        return db.tx( (t) => {
+          let query = 'SELECT author, created, id, isEdited, message, thread, ' +
+            'forum, parent FROM posts WHERE path[1] in (SELECT id FROM posts WHERE parent = 0 ' +
+            'AND thread = ' + data.id + ' ORDER BY id ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker + ') ' +
+            'and thread = ' + data.id + ' ORDER BY path ' + desc + ', id ' + desc;
+          let q1 = db.any(query);
+          let q2 = db.any('SELECT id FROM posts WHERE parent = 0 AND thread = ' + data.id + ' ORDER BY id ' + desc + ' LIMIT ' + limit + ' OFFSET ' + marker);
+          return t.batch([q1, q2]);
+        });
+      }
+    })
+    .then( data => {
+      let result = 0;
+      if(sort === 'flat' || sort === 'tree') {
+        marker += data.length;
+        result = data;
+      } else {
+        result = data[0];
+        marker += data[1].length;
+      }
+      res.status(200)
+        .json({
+          marker: String(marker),
+          posts: result
+        });
+    })
+    .catch( err => {
+      res.status(404).send(err);
     });
-})
-.catch( err => {
-    res.status(404).send(err);
-});
 }
 
 function getUsers(req, res, next) {
@@ -572,36 +839,35 @@ function getUsers(req, res, next) {
 
   db.one('select * from forums where slug = $1', slug)
     .then( data => {
-    forumId = data.id;
-  let query = ' select distinct on (lower(users.nickname collate "ucs_basic")) users.nickname, ' +
-    ' users.fullname, users.email, users.about from users ' +
-    ' inner join users_forums on (users.nickname = users_forums.user_nickname)' +
-    ' where users_forums.forum_id = ' + forumId;
-  if(!isEmpty(since)) {
-    if(desc === 'desc') {
-      query +=' and lower(users.nickname collate "ucs_basic") < lower($3 collate "ucs_basic")';
-    } else {
-      query +=' and lower(users.nickname collate "ucs_basic") > lower($3 collate "ucs_basic")';
-    }
-  }
-  query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
-  if(limit !== 0) {
-    query += ' limit ' + limit;
-  }
-  if(!isEmpty(since)) {
-    return db.any(query, [data.id, data.slug, since]);
-  } else {
-    return db.any(query, [data.id, data.slug]);
-  }
-})
-.then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      forumId = data.id;
+      let query = ' select users.nickname, users.fullname, users.email, users.about from users ' +
+        ' inner join users_forums on (users.nickname = users_forums.user_nickname)' +
+        ' where users_forums.forum_id = ' + forumId;
+      if(!isEmpty(since)) {
+        if(desc === 'desc') {
+          query +=' and lower(users.nickname collate "ucs_basic") < lower($3 collate "ucs_basic")';
+        } else {
+          query +=' and lower(users.nickname collate "ucs_basic") > lower($3 collate "ucs_basic")';
+        }
+      }
+      query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
+      if(limit !== 0) {
+        query += ' limit ' + limit;
+      }
+      if(!isEmpty(since)) {
+        return db.any(query, [data.id, data.slug, since]);
+      } else {
+        return db.any(query, [data.id, data.slug]);
+      }
+    })
+    .then( data => {
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 
   // db.one('select * from forums where slug = $1', slug)
   //   .then( data => {
@@ -642,57 +908,57 @@ function getPost(req, res, next) {
   db.one('select id, author, created, forum, isEdited as \"isEdited\", ' +
     'message, thread, parent from posts where id = $1', id)
     .catch( err => {
-    res.status(404).send(err);
-})
-.then( data => {
-    resp.post = data;
-  db.tx( t => {
-    let que = [];
-  let q1 = t.one('select * from users where nickname=$1', data.author);
-  let q2 = t.one('select forums.slug as forum, threads.author, threads.id, threads.slug, threads.title,' +
-    ' threads.message, threads.created, threads.votes from threads inner join forums on (threads.forum=forums.id)' +
-    ' where threads.id = $1', data.thread);
-  let q3 = t.one('select slug, username as \"user\", title, posts, threads from forums where slug = $1', data.forum);
-  if('related' in req.query) {
-    if(req.query.related.indexOf('user') !== -1) {
-      que.push(q1);
-    }
-    if (req.query.related.indexOf('thread') !== -1) {
-      que.push(q2);
-    }
-    if (req.query.related.indexOf('forum') !== -1) {
-      que.push(q3);
-    }
-  }
-  return t.batch(que);
-})
-.then( data => {
-    if ('related' in req.query) {
-    if (req.query.related.indexOf('user') !== -1) {
-      resp.author = data[0];
-      if (req.query.related.indexOf('thread') !== -1) {
-        resp.thread = data[1];
-        if (req.query.related.indexOf('forum') !== -1) {
-          resp.forum = data[2];
+      res.status(404).send(err);
+    })
+    .then( data => {
+      resp.post = data;
+      db.tx( t => {
+        let que = [];
+        let q1 = t.one('select * from users where nickname=$1', data.author);
+        let q2 = t.one('select forums.slug as forum, threads.author, threads.id, threads.slug, threads.title,' +
+          ' threads.message, threads.created, threads.votes from threads inner join forums on (threads.forum=forums.id)' +
+          ' where threads.id = $1', data.thread);
+        let q3 = t.one('select slug, username as \"user\", title, posts, threads from forums where slug = $1', data.forum);
+        if('related' in req.query) {
+          if(req.query.related.indexOf('user') !== -1) {
+            que.push(q1);
+          }
+          if (req.query.related.indexOf('thread') !== -1) {
+            que.push(q2);
+          }
+          if (req.query.related.indexOf('forum') !== -1) {
+            que.push(q3);
+          }
         }
-      } else if (req.query.related.indexOf('forum') !== -1) {
-        resp.forum = data[1];
-      }
-    } else if (req.query.related.indexOf('thread') !== -1) {
-      resp.thread = data[0];
-      if (req.query.related.indexOf('forum') !== -1) {
-        resp.forum = data[1];
-      }
-    } else if (req.query.related.indexOf('forum') !== -1) {
-      resp.forum = data[0];
-    }
-  }
-  res.status(200).send(resp);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
-});
+        return t.batch(que);
+      })
+        .then( data => {
+          if ('related' in req.query) {
+            if (req.query.related.indexOf('user') !== -1) {
+              resp.author = data[0];
+              if (req.query.related.indexOf('thread') !== -1) {
+                resp.thread = data[1];
+                if (req.query.related.indexOf('forum') !== -1) {
+                  resp.forum = data[2];
+                }
+              } else if (req.query.related.indexOf('forum') !== -1) {
+                resp.forum = data[1];
+              }
+            } else if (req.query.related.indexOf('thread') !== -1) {
+              resp.thread = data[0];
+              if (req.query.related.indexOf('forum') !== -1) {
+                resp.forum = data[1];
+              }
+            } else if (req.query.related.indexOf('forum') !== -1) {
+              resp.forum = data[0];
+            }
+          }
+          res.status(200).send(resp);
+        })
+        .catch( err => {
+          res.status(404).send(err);
+        });
+    });
 }
 
 function updatePost(req, res, next) {
@@ -701,26 +967,26 @@ function updatePost(req, res, next) {
 
   db.one('select isEdited as \"isEdited\", author, created, forum, id, thread, message from posts where id = $1', id)
     .then( data => {
-    let d = JSON.stringify(data);
-  d = JSON.parse(d);
-  if (!isEmpty(message) && (message !== data.message)) {
-    return db.tx( t => {
-        let q1 = t.none('update posts set (message, isEdited) = (\'' + message + '\', true) where id = $1', id);
-    let q2 = t.one('select isEdited as \"isEdited\", author, created, forum, id, thread, message from posts where id = $1', id);
-    return t.batch([q1, q2]);
-  })
-  } else {
-    res.status(200).send(d);
-  }
-})
-.then( data => {
-    let d = JSON.stringify(data[1]);
-  d = JSON.parse(d);
-  res.status(200).send(d);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      let d = JSON.stringify(data);
+      d = JSON.parse(d);
+      if (!isEmpty(message) && (message !== data.message)) {
+        return db.tx( t => {
+          let q1 = t.none('update posts set (message, isEdited) = (\'' + message + '\', true) where id = $1', id);
+          let q2 = t.one('select isEdited as \"isEdited\", author, created, forum, id, thread, message from posts where id = $1', id);
+          return t.batch([q1, q2]);
+        })
+      } else {
+        res.status(200).send(d);
+      }
+    })
+    .then( data => {
+      let d = JSON.stringify(data[1]);
+      d = JSON.parse(d);
+      res.status(200).send(d);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function getStatus(req, res, next) {
@@ -728,31 +994,31 @@ function getStatus(req, res, next) {
 
   db.tx( t => {
     let q1 = t.one('select count(*) from users');
-  let q2 = t.one('select count(*) from threads');
-  let q3 = t.one('select count(*) from posts');
-  let q4 = t.one('select count(*) from forums');
-  return t.batch([q1, q2, q3, q4]);
-})
-.then( data => {
-    resp.user = parseInt(data[0].count);
-  resp.thread = parseInt(data[1].count);
-  resp.post = parseInt(data[2].count);
-  resp.forum = parseInt(data[3].count);
-  res.status(200).send(resp);
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+    let q2 = t.one('select count(*) from threads');
+    let q3 = t.one('select count(*) from posts');
+    let q4 = t.one('select count(*) from forums');
+    return t.batch([q1, q2, q3, q4]);
+  })
+    .then( data => {
+      resp.user = parseInt(data[0].count);
+      resp.thread = parseInt(data[1].count);
+      resp.post = parseInt(data[2].count);
+      resp.forum = parseInt(data[3].count);
+      res.status(200).send(resp);
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 function serviceClear(req, res, next) {
   db.none('truncate users cascade')
     .then( () => {
-    res.status(200).send();
-})
-.catch( err => {
-    res.status(404).send(err);
-});
+      res.status(200).send();
+    })
+    .catch( err => {
+      res.status(404).send(err);
+    });
 }
 
 module.exports = {
