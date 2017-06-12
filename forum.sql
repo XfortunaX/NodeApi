@@ -88,7 +88,9 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
 CREATE INDEX IF NOT EXISTS idx_post_forum ON posts(forum);
 CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(thread);
+CREATE INDEX IF NOT EXISTS idx_post_parent ON posts(parent);
 CREATE INDEX IF NOT EXISTS idx_post_created ON posts(created);
+CREATE INDEX IF NOT EXISTS idx_post_p ON posts(path);
 CREATE INDEX IF NOT EXISTS idx_post_p1 ON posts((path[1]));
 CREATE INDEX IF NOT EXISTS idx_post_t_c_i ON posts(thread, created, id);
 CREATE INDEX IF NOT EXISTS idx_post_p_t_i ON posts(parent, thread, id);
