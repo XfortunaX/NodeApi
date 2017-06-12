@@ -642,8 +642,8 @@ function getUsers(req, res, next) {
   db.one('select * from forums where slug = $1', slug)
     .then( data => {
       let query = 'select * from users where nickname in ' +
-        '(select user_nickname from users_forums where forum_id = $1 ';
-      if(!isEmpty(since)) {
+        '(select user_nickname from users_forums where forum_id = $1) ';
+      if (!isEmpty(since)) {
         if(desc === 'desc') {
           query +=' and lower(users.nickname collate "ucs_basic") < lower($2 collate "ucs_basic")';
         } else {
@@ -651,7 +651,7 @@ function getUsers(req, res, next) {
         }
       }
       query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
-      if(limit !== 0) {
+      if (limit !== 0) {
         query += ' limit ' + limit;
       }
       if(!isEmpty(since)) {
