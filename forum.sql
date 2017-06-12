@@ -13,7 +13,6 @@ DROP INDEX IF EXISTS unique_slug_thread;
 DROP INDEX IF EXISTS idx_post_author;
 DROP INDEX IF EXISTS idx_post_forum;
 DROP INDEX IF EXISTS idx_post_thread;
-DROP INDEX IF EXISTS idx_post_parent;
 DROP INDEX IF EXISTS idx_thread_created;
 DROP INDEX IF EXISTS idx_post_created;
 DROP INDEX IF EXISTS idx_post_t_c_i;
@@ -88,13 +87,11 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
 CREATE INDEX IF NOT EXISTS idx_post_forum ON posts(forum);
 CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(thread);
-CREATE INDEX IF NOT EXISTS idx_post_parent ON posts(parent);
 CREATE INDEX IF NOT EXISTS idx_post_created ON posts(created);
 CREATE INDEX IF NOT EXISTS idx_post_p1 ON posts((path[1]));
-CREATE INDEX IF NOT EXISTS idx_post_t_c_i ON posts(thread, created, id);
-CREATE INDEX IF NOT EXISTS idx_post_p_t_i ON posts(parent, thread, id);
+CREATE INDEX IF NOT EXISTS idx_post_p_t_i ON posts(parent, thread);
 CREATE INDEX IF NOT EXISTS idx_post_t_p ON posts(thread, path);
-CREATE INDEX IF NOT EXISTS idx_post_p1_t_p_i ON posts(thread, path, id);
+CREATE INDEX IF NOT EXISTS idx_post_p1_t_p_i ON posts(path, id);
 
 DROP Table IF EXISTS votes CASCADE;
 
@@ -112,9 +109,6 @@ CREATE TABLE IF NOT EXISTS users_forums (
   user_nickname VARCHAR REFERENCES users (nickname) NOT NULL,
   forum_id INTEGER REFERENCES forums(id) NOT NULL
 );
-
-ALTER TABLE users_forums DROP CONSTRAINT IF EXISTS unique_uf;
-ALTER TABLE users_forums ADD CONSTRAINT unique_uf UNIQUE (user_nickname, forum_id);
 
 CREATE INDEX IF NOT EXISTS idx_uf_user ON users_forums (user_nickname);
 CREATE INDEX IF NOT EXISTS idx_uf_forum ON users_forums (forum_id);
