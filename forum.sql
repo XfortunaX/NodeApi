@@ -34,7 +34,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_email ON users(email);
-CREATE UNIQUE INDEX IF NOT EXISTS unique_nickname ON users(upper(nickname));
+CREATE UNIQUE INDEX IF NOT EXISTS unique_up_nickname ON users(upper(nickname));
+CREATE UNIQUE INDEX IF NOT EXISTS unique_nickname ON users(nickname);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_nickname_low ON users(lower(nickname collate "ucs_basic"));
 
 DROP Table IF EXISTS forums CASCADE;
