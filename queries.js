@@ -756,20 +756,19 @@ function getUsers(req, res, next) {
     since = req.query.since;
   }
 
-  db.one('select * from forums where slug = $1', slug)
+  db.one('select id from forums where slug = $1', slug)
     .then( data => {
       forumId = data.id;
-      let query = ' select distinct on (lower(users.nickname collate "ucs_basic")) users.nickname, users.fullname, users.email, users.about from users ' +
-        ' inner join users_forums on (users.nickname = users_forums.user_nickname)' +
-        ' where users_forums.forum_id = ' + forumId;
+      let query = ' select distinct on (lower(users_forums.user_nickname) collate "ucs_basic") users.nickname, users.fullname, users.email, users.about from users_forums ' +
+        ' join users on (users_forums.user_nickname = users.nickname) where users_forums.forum_id = ' + forumId;
       if(!isEmpty(since)) {
         if(desc === 'desc') {
-          query +=' and lower(users.nickname collate "ucs_basic") < lower($3 collate "ucs_basic")';
+          query +=' and lower(users_forums.user_nickname) COLLATE "ucs_basic" < lower($3) collate "ucs_basic"';
         } else {
-          query +=' and lower(users.nickname collate "ucs_basic") > lower($3 collate "ucs_basic")';
+          query +=' and lower(users_forums.user_nickname) COLLATE "ucs_basic" > lower($3) collate "ucs_basic"';
         }
       }
-      query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
+      query +=  ' order by lower(users_forums.user_nickname) COLLATE "ucs_basic" ' + desc;
       if(limit !== 0) {
         query += ' limit ' + limit;
       }
@@ -787,115 +786,6 @@ function getUsers(req, res, next) {
     .catch( err => {
       res.status(404).send(err);
     });
-
-  // let slug = req.params.slug;
-  // let forumId = 0;
-  // let desc = 'asc';
-  // if('desc' in req.query && req.query.desc === 'true') {
-  //   desc = 'desc';
-  // }
-  // let limit = 0;
-  // if('limit' in req.query) {
-  //   limit = req.query.limit;
-  // }
-  // let since = '';
-  // if('since' in req.query) {
-  //   since = req.query.since;
-  // }
-  //
-  // db.one('select * from forums where slug = $1', slug)
-  //   .then( data => {
-  //     let query = 'select * from users where nickname in ' +
-  //       '(select user_nickname from users_forums where forum_id = $1) ';
-  //     if (!isEmpty(since)) {
-  //       if(desc === 'desc') {
-  //         query +=' and lower(users.nickname collate "ucs_basic") < lower($2 collate "ucs_basic")';
-  //       } else {
-  //         query +=' and lower(users.nickname collate "ucs_basic") > lower($2 collate "ucs_basic")';
-  //       }
-  //     }
-  //     query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
-  //     if (limit !== 0) {
-  //       query += ' limit ' + limit;
-  //     }
-  //     if(!isEmpty(since)) {
-  //       return db.any(query, [data.id, since]);
-  //     } else {
-  //       return db.any(query, [data.id]);
-  //     }
-  //   })
-  //   .then( data => {
-  //     let d = JSON.stringify(data);
-  //     d = JSON.parse(d);
-  //     res.status(200).send(d);
-  //   })
-  //   .catch( err => {
-  //     res.status(404).send(err);
-  //   });
-
-  // db.one('select * from forums where slug = $1', slug)
-  //   .then( data => {
-  //     forumId = data.id;
-  //     let query = ' select  distinct on (lower(users.nickname collate "ucs_basic")) users.nickname, ' +
-  //       ' users.fullname, users.email, users.about from users ' +
-  //       ' inner join users_forums on (users.nickname = users_forums.user_nickname)' +
-  //       ' where users_forums.forum_id = ' + forumId;
-  //     if(!isEmpty(since)) {
-  //       if(desc === 'desc') {
-  //         query +=' and lower(users.nickname collate "ucs_basic") < lower($3 collate "ucs_basic")';
-  //       } else {
-  //         query +=' and lower(users.nickname collate "ucs_basic") > lower($3 collate "ucs_basic")';
-  //       }
-  //     }
-  //     query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
-  //     if(limit !== 0) {
-  //       query += ' limit ' + limit;
-  //     }
-  //     if(!isEmpty(since)) {
-  //       return db.any(query, [data.id, data.slug, since]);
-  //     } else {
-  //       return db.any(query, [data.id, data.slug]);
-  //     }
-  //   })
-  //   .then( data => {
-  //     let d = JSON.stringify(data);
-  //     d = JSON.parse(d);
-  //     res.status(200).send(d);
-  //   })
-  //   .catch( err => {
-  //     res.status(404).send(err);
-  //   });
-
-  // db.one('select * from forums where slug = $1', slug)
-  //   .then( data => {
-  //     let query = 'select * from users where (users.nickname in (' +
-  //       ' select distinct threads.author from threads where threads.forum = $1 ) or users.nickname in (' +
-  //       ' select distinct posts.author from posts where posts.forum = $2 )) ';
-  //     if(!isEmpty(since)) {
-  //       if(desc === 'desc') {
-  //         query +=' and lower(users.nickname collate "ucs_basic") < lower($3 collate "ucs_basic")';
-  //       } else {
-  //         query +=' and lower(users.nickname collate "ucs_basic") > lower($3 collate "ucs_basic")';
-  //       }
-  //     }
-  //     query +=  ' order by lower(users.nickname collate "ucs_basic") ' + desc;
-  //     if(limit !== 0) {
-  //       query += ' limit ' + limit;
-  //     }
-  //     if(!isEmpty(since)) {
-  //       return db.any(query, [data.id, data.slug, since]);
-  //     } else {
-  //       return db.any(query, [data.id, data.slug]);
-  //     }
-  //   })
-  //   .then( data => {
-  //     let d = JSON.stringify(data);
-  //     d = JSON.parse(d);
-  //     res.status(200).send(d);
-  //   })
-  //   .catch( err => {
-  //     res.status(404).send(err);
-  //   });
 }
 
 function getPost(req, res, next) {

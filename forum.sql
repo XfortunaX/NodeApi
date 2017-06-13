@@ -110,3 +110,4 @@ CREATE TABLE IF NOT EXISTS users_forums (
 
 CREATE INDEX IF NOT EXISTS idx_uf_user ON users_forums (user_nickname);
 CREATE INDEX IF NOT EXISTS idx_uf_forum ON users_forums (forum_id);
+CREATE INDEX IF NOT EXISTS idx_uf_user_low on users_forums (lower(user_nickname) COLLATE "ucs_basic");
