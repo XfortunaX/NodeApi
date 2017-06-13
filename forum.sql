@@ -66,8 +66,6 @@ CREATE TABLE IF NOT EXISTS threads (
 
 CREATE INDEX IF NOT EXISTS idx_thread_user ON threads(author);
 CREATE INDEX IF NOT EXISTS idx_thread_forum ON threads(forum);
-CREATE INDEX IF NOT EXISTS idx_thread_created ON threads(created);
-CREATE INDEX IF NOT EXISTS idx_thread_f_c ON threads(forum, created);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_slug_thread ON threads(slug);
 
 DROP Table IF EXISTS posts CASCADE;
@@ -87,11 +85,12 @@ CREATE TABLE IF NOT EXISTS posts (
 CREATE INDEX IF NOT EXISTS idx_post_author ON posts(author);
 CREATE INDEX IF NOT EXISTS idx_post_forum ON posts(forum);
 CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(thread);
-CREATE INDEX IF NOT EXISTS idx_post_created ON posts(created);
+CREATE INDEX IF NOT EXISTS idx_post_thread ON posts(created);
 CREATE INDEX IF NOT EXISTS idx_post_p1 ON posts((path[1]));
-CREATE INDEX IF NOT EXISTS idx_post_p_t_i ON posts(parent, thread);
+CREATE INDEX IF NOT EXISTS idx_post_t_c_i ON posts(thread, created, id);
+CREATE INDEX IF NOT EXISTS idx_post_p_t_i ON posts(parent, thread, id);
+CREATE INDEX IF NOT EXISTS idx_post_i_t ON posts(id, thread);
 CREATE INDEX IF NOT EXISTS idx_post_t_p ON posts(thread, path);
-CREATE INDEX IF NOT EXISTS idx_post_p1_t_p_i ON posts(path, id);
 
 DROP Table IF EXISTS votes CASCADE;
 
