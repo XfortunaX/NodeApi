@@ -102,3 +102,14 @@ CREATE TABLE IF NOT EXISTS votes (
   thread INTEGER NOT NULL REFERENCES threads (id),
   UNIQUE (username, thread)
 );
+
+CREATE TABLE IF NOT EXISTS users_forums (
+  user_nickname VARCHAR REFERENCES users (nickname) NOT NULL,
+  forum_id INTEGER REFERENCES forums(id) NOT NULL
+);
+
+ALTER TABLE users_forums DROP CONSTRAINT IF EXISTS unique_uf;
+ALTER TABLE users_forums ADD CONSTRAINT unique_uf UNIQUE (user_nickname, forum_id);
+
+CREATE INDEX IF NOT EXISTS idx_uf_user ON users_forums (user_nickname);
+CREATE INDEX IF NOT EXISTS idx_uf_forum ON users_forums (forum_id);
