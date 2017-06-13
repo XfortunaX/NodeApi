@@ -354,15 +354,35 @@ function createOneThread(req, res, next) {
         posts[i].forum = forumSlug;
       }
       return db.tx(t => {
-        let queries = posts.map(l => {
-          let query = 'INSERT INTO users_forums values($1, $2);';
-          query += ' INSERT INTO posts (id, author, message, parent, thread, forum, created, path) ' +
-            'VALUES ($3, $4, $5, $6, $7, $8, $9, array_append($10::INTEGER[], $11))';
-          return t.none(query, [l.author, forumId, l.id, l.author, l.message, l.parent, l.thread, l.forum, l.created, l.path, l.id]);
-        });
+        let creat = [];
+        let query = ' INSERT INTO posts (id, author, message, parent, thread, forum, created, path) VALUES';
+        for (let i = 0; i < posts.length; i += 1) {
+          query += ' (' + posts[i].id + ',\'' + posts[i].author + '\',\'' + posts[i].message + '\',' +
+            posts[i].parent + ',' + posts[i].thread + ',\'' + posts[i].forum + '\', $' + parseInt(i + 1) + ','
+            + ' array_append(ARRAY[';
+          if (posts[i].path.length > 0) {
+            query += posts[i].path[0];
+          }
+          for (let j = 1; j < posts[i].path.length; j += 1) {
+            query += ',' + posts[i].path[j];
+          }
+          query += ']::integer[], ' + posts[i].id + '))';
+          if (i < posts.length - 1) {
+            query += ',';
+          }
+          creat.push(posts[i].created);
+        }
+        query += ';';
+        query += 'insert into users_forums values';
+        for (let i = 0; i < posts.length; i += 1) {
+          query += ' (\'' + posts[i].author + '\',' + forumId + ')';
+          if (i < posts.length - 1) {
+            query += ',';
+          }
+        }
+        let q1 = t.none(query, creat);
         let q2 = t.none('update forums set (posts) = (posts + ' + posts.length + ') where forums.slug = $1', forumSlug);
-        queries.push(q2);
-        return t.batch(queries);
+        return t.batch([q1, q2]);
       })
     })
     .then( data => {
